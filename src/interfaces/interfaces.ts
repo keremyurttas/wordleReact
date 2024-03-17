@@ -1,6 +1,7 @@
 export interface Prediction {
   letter: string;
   result: string;
+  classes: string;
 }
 export interface Statistics {
   win: boolean;

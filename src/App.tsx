@@ -9,12 +9,18 @@ import { Prediction } from "./interfaces/interfaces";
 function App() {
   const wordLength = 5;
   const attemptsLimit = 6;
-  const dailyWord = "modal";
+  const dailyWord = "hello";
   // const [activeRowIndex, setActiveRowIndex] = useState(0);
   let activeRowIndex = 0;
+  interface Entries {}
+  interface Cell {
+    letter: string;
+    result: string;
+    classes: string;
+  }
   const [entries, setEntries] = useState(
-    Array.from({ length: attemptsLimit }, () =>
-      Array.from({ length: wordLength }, (): any => {
+    Array.from({ length: attemptsLimit }, (): Cell[] =>
+      Array.from({ length: wordLength }, (): Cell => {
         return {
           letter: "",
           result: "",
@@ -34,6 +40,8 @@ function App() {
   useEffect(() => {
     const keyPressed = (e: KeyboardEvent) => {
       const newRow = entries[activeRowIndex];
+      const key = e.key;
+      const isLetter = /^[a-zA-Z]$/i.test(key);
       const assignCellValues = () => {
         setEntries([
           ...entries.slice(0, activeRowIndex),
@@ -41,7 +49,7 @@ function App() {
           ...entries.slice(activeRowIndex + 1),
         ]);
       };
-      switch (e.key) {
+      switch (key) {
         case "Enter":
           if (entries[activeRowIndex].every((entry) => entry.letter !== "")) {
             checkActiveRow();
@@ -66,7 +74,7 @@ function App() {
           }
           break;
         default:
-          if (activeIndex < wordLength) {
+          if (isLetter && activeIndex < wordLength) {
             // Only update entries if activeIndex is within bounds
             newRow[activeIndex] = {
               letter: e.key,
@@ -90,23 +98,27 @@ function App() {
   function checkActiveRow() {
     const correctValues = dailyWord.split("");
     const checkedRow = entries[activeRowIndex].map((entry, index) => {
+      const currentIndexMatches = entry.letter === correctValues[index];
+      if (currentIndexMatches) {
+        correctValues.splice(index, 1, "");
+      }
+
       return {
         ...entry,
-        result:
-          entry.letter === correctValues[index]
-            ? "true"
-            : correctValues.includes(entry.letter)
-            ? "false-position"
-            : "false",
+        result: currentIndexMatches
+          ? "true"
+          : correctValues.includes(entry.letter)
+          ? "false-position"
+          : "false",
       };
     });
-    console.log(checkedRow);
+
     setEntries([
       ...entries.slice(0, activeRowIndex),
       checkedRow,
       ...entries.slice(activeRowIndex + 1),
     ]);
-    console.log(entries);
+    console.log(checkedRow);
   }
 
   function getGameTable() {
@@ -122,7 +134,6 @@ function App() {
                   className={cell.classes + "cell w-20 h-20"}
                 >
                   {cell.letter}
-                  {cell.result}
                 </div>
               );
             })

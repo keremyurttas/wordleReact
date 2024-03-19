@@ -89,15 +89,28 @@ input:checked + .slider:before {
   border-radius: 50%;
 }
 .keyboard-btn {
-  @apply rounded-md  bg-key_light_bg dark:bg-key_dark_bg dark:text-white text-lg lg:p-5 md:p-3 p-2  font-semibold text-key_light uppercase;
+  @apply rounded-md  bg-key_light dark:bg-key_dark dark:text-white text-lg lg:p-5 md:p-3 p-2  font-semibold text-key_light uppercase;
 }
 .letter-container {
-  @apply grid grid-cols-5 gap-2 w-full;
+  @apply grid grid-cols-5 gap-1.5 w-full;
 }
 .cell {
-  @apply rounded-md bg-cell_default_bg dark:bg-cell_dark_bg aspect-square text-3xl uppercase md:text-4xl font-extrabold text-white flex items-center justify-center;
+  @apply rounded-md bg-cell_default dark:bg-cell_dark aspect-square text-3xl uppercase md:text-4xl font-extrabold text-white flex items-center justify-center;
 }
+
+.cell-true {
+  @apply bg-cell_true dark:bg-cell_true cell-animation;
+}
+.cell-false {
+  @apply bg-cell_false dark:bg-key_dark_false cell-animation;
+}
+.cell-false-position {
+  @apply bg-cell_false_position dark:bg-cell_dark_false_position cell-animation;
+}
+
+
 .rotate-x {
+  transition-delay: 1000ms;
   transition: transform 2s ease;
   transform: rotateX(1turn);
 }
@@ -106,7 +119,7 @@ input:checked + .slider:before {
 }
 
 .cell-animation {
-  animation: cell 0.7s;
+  animation: cell 0.6s;
 }
 @keyframes cell {
   0% {

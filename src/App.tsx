@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 
 import "./App.css";
 import ResultModal from "./components/ResultModal";
-// import { CSSTransition } from "react-transition-group";
 import HowToModal from "./components/HowToModal";
 import MessageToast from "./components/MessageToast";
 import { Prediction } from "./interfaces/interfaces";
@@ -10,91 +9,34 @@ function App() {
   const wordLength = 5;
   const attemptsLimit = 6;
   const dailyWord = "hello";
-  // const [activeRowIndex, setActiveRowIndex] = useState(0);
   let activeRowIndex = 0;
-  interface Entries {}
   interface Cell {
     letter: string;
     result: string;
     classes: string;
   }
-  const [entries, setEntries] = useState(
-    Array.from({ length: attemptsLimit }, (): Cell[] =>
-      Array.from({ length: wordLength }, (): Cell => {
-        return {
-          letter: "",
-          result: "",
-          classes: "",
-        };
-      })
-    )
+  const assignEntries = (newRow: Cell[]) => {
+    setEntries((prevEntries) => {
+      const updatedEntries = [...prevEntries]; // Create a copy of the entries array
+      updatedEntries[activeRowIndex] = newRow; // Update the active row in the copied array
+      return updatedEntries; // Return the updated entries array
+    });
+  };
+  const gameTable = Array.from({ length: attemptsLimit }, (): Cell[] =>
+    Array.from({ length: wordLength }, (): Cell => {
+      return {
+        letter: "",
+        result: "",
+        classes: "",
+      };
+    })
   );
+  const [entries, setEntries] = useState(gameTable);
 
   function displayPopup(popup: string, message?: string) {
     return "sadsa";
   }
-  // const [activeIndex, setActiveIndex] = useState(0);
   let activeIndex = 0;
-  // const [activeRowOfEntries]
-  const activeRowOfEntries = entries[activeRowIndex];
-  useEffect(() => {
-    const keyPressed = (e: KeyboardEvent) => {
-      const newRow = entries[activeRowIndex];
-      const key = e.key;
-      const isLetter = /^[a-zA-Z]$/i.test(key);
-      const assignCellValues = () => {
-        setEntries([
-          ...entries.slice(0, activeRowIndex),
-          newRow,
-          ...entries.slice(activeRowIndex + 1),
-        ]);
-      };
-      switch (key) {
-        case "Enter":
-          if (entries[activeRowIndex].every((entry) => entry.letter !== "")) {
-            checkActiveRow();
-            activeRowIndex++;
-            activeIndex = 0;
-          } else {
-            alert("Please fill all cells before moving to the next row.");
-          }
-          break;
-        case "Backspace":
-          {
-            if (activeIndex > 0) {
-              activeIndex--;
-              newRow[activeIndex] = {
-                letter: "",
-                result: "",
-                classes: "",
-              };
-
-              assignCellValues();
-            }
-          }
-          break;
-        default:
-          if (isLetter && activeIndex < wordLength) {
-            // Only update entries if activeIndex is within bounds
-            newRow[activeIndex] = {
-              letter: e.key,
-              result: "",
-              classes: "",
-            };
-            assignCellValues();
-
-            activeIndex++;
-          }
-      }
-    };
-
-    window.addEventListener("keydown", keyPressed);
-
-    return () => {
-      window.removeEventListener("keydown", keyPressed);
-    };
-  }, []);
-  useEffect(() => {}, [entries]);
   function checkActiveRow() {
     const correctValues = dailyWord.split("");
     const checkedRow = entries[activeRowIndex].map((entry, index) => {
@@ -112,47 +54,96 @@ function App() {
           : "false",
       };
     });
-
-    setEntries([
-      ...entries.slice(0, activeRowIndex),
-      checkedRow,
-      ...entries.slice(activeRowIndex + 1),
-    ]);
-    console.log(checkedRow);
+    assignEntries(checkedRow);
   }
+
+  useEffect(() => {
+    const keyPressed = async (e: KeyboardEvent) => {
+      const newRow = entries[activeRowIndex];
+      const key = e.key;
+      const isLetter = /^[a-zA-Z]$/i.test(key);
+      switch (key) {
+        case "Enter":
+          if (entries[activeRowIndex].every((entry) => entry.letter !== "")) {
+            await checkActiveRow();
+            activeRowIndex++;
+            activeIndex = 0;
+          } else {
+            alert("Please fill all cells before moving to the next row.");
+          }
+          break;
+        case "Backspace":
+          {
+            if (activeIndex > 0) {
+              activeIndex--;
+              newRow[activeIndex] = {
+                letter: "",
+                result: "",
+                classes: "",
+              };
+
+              assignEntries(newRow);
+            }
+          }
+          break;
+        default:
+          if (isLetter && activeIndex < wordLength) {
+            // Only update entries if activeIndex is within bounds
+            newRow[activeIndex].letter = e.key;
+
+            assignEntries(newRow);
+
+            activeIndex++;
+          }
+      }
+    };
+    window.addEventListener("keydown", keyPressed);
+
+    return () => {
+      window.removeEventListener("keydown", keyPressed);
+    };
+  }, []);
+  // useEffect(() => {
+  //   setTimeout(() => {
+  //     setEntries((prevEntries) => {
+  //       const updatedEntries = [...prevEntries];
+  //       const activeCell = updatedEntries[0][x];
+  //       activeCell.classes = "cell-" + activeCell.result;
+
+  //       // Increment activeIndex if it's within bounds
+  //       setX((x) => x + 1);
+  //       console.log(x);
+  //       return updatedEntries;
+  //     });
+  //   }, (x + 1) * 500);
+  // }, entries);
 
   function getGameTable() {
     return (
       <>
-        {
-          entries.map((entry, entryIndex) =>
-            entry.map((cell, cellIndex) => {
-              const uniqueKey = `entry-${entryIndex}-cell-${cellIndex}`;
-              return (
-                <div
-                  key={uniqueKey}
-                  className={cell.classes + "cell w-20 h-20"}
-                >
-                  {cell.letter}
-                </div>
-              );
-            })
-          )
+        {entries.map((entry, entryIndex) =>
+          entry.map((cell, cellIndex) => {
+            const uniqueKey = `entry-${entryIndex}-cell-${cellIndex}`;
+            const delayValue = cellIndex * 500; // Calculate delay based on cellIndex
 
-          /* {entries.map((row, index) => {
-          row.map((cell) => {
-            <div
-              className="cell w-20 h-20 bg-red-500"
-              // className={`${handleCellBG(cell.result)} ${handleShake(
-              //   index
-              // )} cell`}
-              key={index}
-            >
-              {cell.letter}
-            </div>;
-          });
-        })} */
-        }
+            // Use setTimeout to apply classes with delay
+            setTimeout(() => {
+              const element = document.getElementById(uniqueKey);
+              if (element && cell.result) {
+                element.classList.add(`cell-${cell.result}`);
+              }
+            }, delayValue);
+            return (
+              <div
+                id={uniqueKey}
+                key={uniqueKey}
+                className={"cell " + cell.classes}
+              >
+                {cell.letter}
+              </div>
+            );
+          })
+        )}
       </>
     );
   }
@@ -169,14 +160,10 @@ function App() {
     }
   }
 
-  // useEffect(() => {
-  //   console.log(entries);
-  // }, [entries]);
   return (
-    <section className="md:py-10 py-5 flex flex-col justify-between h-screen dark:bg-main_dark_bg">
-      <div className="mx-auto px-6 py-8 flex gap-8 md:gap-40 dark:bg-header_dark_bg bg-header_bg w-max rounded-2xl">
+    <section className="md:py-10 py-5 flex flex-col justify-between h-screen dark:bg-main_dark">
+      <div className="mx-auto px-6 py-8 flex gap-8 md:gap-40 dark:bg-header_dark bg-header w-max rounded-2xl">
         <div className="flex gap-4">
-          {}
           <button onClick={() => displayPopup("HowToModal")}>
             <img
               className="dark:hidden"

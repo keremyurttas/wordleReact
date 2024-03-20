@@ -8,6 +8,7 @@ interface Props {
 }
 
 export default function ResultModal({ close, statistics, message }: Props) {
+  console.log(statistics);
   const renderGameResult = () => {
     if (!statistics.gameFinished) return null;
 
@@ -20,8 +21,8 @@ export default function ResultModal({ close, statistics, message }: Props) {
   };
   function getResultBarDesign(index: number) {
     return statistics.correctAttempt === index
-      ? "w-full bg-cell_true_bg dark:bg-cell_dark_true_bg"
-      : "bg-message_bg";
+      ? "w-full bg-cell_true dark:bg-cell_dark_true"
+      : "bg-message";
   }
   const attempts = Array.from(
     { length: MAX_ATTEMPTS },
@@ -29,13 +30,14 @@ export default function ResultModal({ close, statistics, message }: Props) {
   );
   return (
     <section className="w-full h-full fixed pt-20 flex top-0 justify-center z-50 backdrop-blur-sm">
-      <div className="w-max relative px-10 py-10 rounded-xl justify-center h-max dark:bg-key_dark_bg bg-white space-y-4 shadow-lg">
+      <div className="w-max relative px-10 py-10 rounded-xl justify-center h-max dark:bg-key_dark bg-white space-y-4 shadow-lg">
         <button
           onClick={close}
           className="dark:text-white absolute right-5 top-5 text-2xl"
         >
           x
         </button>
+
         {renderGameResult()}
         <h3 className="text-2xl font-bold dark:text-white">Statistics</h3>
         <div className="flex gap-4 lg:gap-20">

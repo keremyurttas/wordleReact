@@ -1,20 +1,21 @@
-import React, { useEffect, useState } from "react";
+import React, { ReactNode, useEffect, useState } from "react";
 
 import "./App.css";
 import ResultModal from "./components/ResultModal";
 import HowToModal from "./components/HowToModal";
 import MessageToast from "./components/MessageToast";
-import { Prediction } from "./interfaces/interfaces";
+import { Statistics } from "./interfaces/interfaces";
+interface Cell {
+  letter: string;
+  result: string;
+  classes: string;
+}
 function App() {
   const wordLength = 5;
   const attemptsLimit = 6;
   const dailyWord = "hello";
+
   let activeRowIndex = 0;
-  interface Cell {
-    letter: string;
-    result: string;
-    classes: string;
-  }
   const assignEntries = (newRow: Cell[]) => {
     setEntries((prevEntries) => {
       const updatedEntries = [...prevEntries]; // Create a copy of the entries array
@@ -32,12 +33,16 @@ function App() {
     })
   );
   const [entries, setEntries] = useState(gameTable);
+  const [isGamePlayable, setIsGamePlayable] = useState(true);
 
-  function displayPopup(popup: string, message?: string) {
-    return "sadsa";
-  }
+  const [statistics, setStatistics] = useState<Statistics>({
+    win: false,
+    correctAttempt: null,
+    gameFinished: false,
+  });
+
   let activeIndex = 0;
-  function checkActiveRow() {
+  async function checkActiveRow() {
     const correctValues = dailyWord.split("");
     const checkedRow = entries[activeRowIndex].map((entry, index) => {
       const currentIndexMatches = entry.letter === correctValues[index];
@@ -55,6 +60,69 @@ function App() {
       };
     });
     assignEntries(checkedRow);
+    handleResultModal(checkedRow.every((cell) => cell.result === "true"));
+  }
+
+  function handleResultModal(isUserWon: boolean) {
+    function handleShowStatistics(isUserWon: boolean) {
+      setStatistics((prevStatistics) => {
+        // Use the previous state to compute the new state
+
+        const newStatistics = {
+          ...prevStatistics,
+          win: isUserWon,
+          correctAttempt: activeRowIndex,
+          gameFinished: true,
+        };
+        return newStatistics;
+      });
+      setTimeout(() => {
+        setActiveComponent(
+          <ResultModal
+            close={handleClose}
+            message={dailyWord}
+            statistics={{
+              win: isUserWon,
+              correctAttempt: activeRowIndex - 1,
+              gameFinished: true,
+            }}
+          />
+        );
+      }, 2500);
+    }
+
+    if (isUserWon || activeRowIndex + 1 === attemptsLimit) {
+      handleShowStatistics(isUserWon);
+      setIsGamePlayable(false);
+    }
+  }
+
+  function handleShake() {
+    const shakeTimeout = 1000;
+
+    // Apply shake classes
+    setEntries((prevEntries) => {
+      const updatedEntries = prevEntries.map((row, rowIndex) => {
+        if (rowIndex === activeRowIndex) {
+          return row.map((cell) => ({ ...cell, classes: "shake" }));
+        }
+        return row;
+      });
+      return updatedEntries;
+    });
+
+    // Remove shake classes after timeout
+    setTimeout(() => {
+      setEntries((prevEntries) => {
+        const updatedEntries = prevEntries.map((row, rowIndex) => {
+          if (rowIndex === activeRowIndex) {
+            return row.map((cell) => ({ ...cell, classes: "" }));
+          }
+          return row;
+        });
+        return updatedEntries;
+      });
+    }, shakeTimeout);
   }
 
   useEffect(() => {
@@ -69,7 +137,10 @@ function App() {
             activeRowIndex++;
             activeIndex = 0;
           } else {
-            alert("Please fill all cells before moving to the next row.");
+            handleShake();
+            setActiveComponent(
+              <MessageToast message="Not enough letters" close={handleClose} />
+            );
           }
           break;
         case "Backspace":
@@ -97,26 +168,18 @@ function App() {
           }
       }
     };
-    window.addEventListener("keydown", keyPressed);
+
+    if (isGamePlayable) {
+      window.addEventListener("keydown", keyPressed);
+    } else {
+      // Remove the event listener if the game is not playable
+      window.removeEventListener("keydown", keyPressed);
+    }
 
     return () => {
       window.removeEventListener("keydown", keyPressed);
     };
-  }, []);
-  // useEffect(() => {
-  //   setTimeout(() => {
-  //     setEntries((prevEntries) => {
-  //       const updatedEntries = [...prevEntries];
-  //       const activeCell = updatedEntries[0][x];
-  //       activeCell.classes = "cell-" + activeCell.result;
-
-  //       // Increment activeIndex if it's within bounds
-  //       setX((x) => x + 1);
-  //       console.log(x);
-  //       return updatedEntries;
-  //     });
-  //   }, (x + 1) * 500);
-  // }, entries);
+  }, [isGamePlayable]);
 
   function getGameTable() {
     return (
@@ -159,12 +222,22 @@ function App() {
       localStorage.setItem("theme", "dark");
     }
   }
+  const [activeComponent, setActiveComponent] = useState<ReactNode>(null);
+
+  function handleClose() {
+    setActiveComponent(null);
+  }
 
   return (
     <section className="md:py-10 py-5 flex flex-col justify-between h-screen dark:bg-main_dark">
+      {activeComponent}
       <div className="mx-auto px-6 py-8 flex gap-8 md:gap-40 dark:bg-header_dark bg-header w-max rounded-2xl">
         <div className="flex gap-4">
-          <button onClick={() => displayPopup("HowToModal")}>
+          <button
+            onClick={() => {
+              setActiveComponent(<HowToModal close={handleClose} />);
+            }}
+          >
             <img
               className="dark:hidden"
               src="/assets/icons/questionMark.svg"
@@ -176,7 +249,17 @@ function App() {
               alt=""
             />
           </button>
-          <button onClick={() => displayPopup("ResultModal")}>
+          <button
+            onClick={() => {
+              setActiveComponent(
+                <ResultModal
+                  close={handleClose}
+                  message={dailyWord}
+                  statistics={statistics}
+                />
+              );
+            }}
+          >
             <img
               className="dark:hidden"
               src="/assets/icons/statistics.svg"

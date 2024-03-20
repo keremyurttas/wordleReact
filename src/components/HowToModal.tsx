@@ -28,7 +28,7 @@ export default function HowToModal({ close }: Props) {
   }
   return (
     <section className="w-full h-full fixed flex pt-20 top-0 justify-center backdrop-blur-sm z-50">
-      <div className="w-max p-10 rounded-xl backdrop-blur-sm justify-center h-max bg-white dark:bg-key_dark_bg space-y-4 shadow-lg">
+      <div className="w-max p-10 rounded-xl backdrop-blur-sm justify-center h-max bg-white dark:bg-key_dark space-y-4 shadow-lg">
         <div>
           <button
             onClick={close}
@@ -54,7 +54,7 @@ export default function HowToModal({ close }: Props) {
               <div className="letter-container w-1/2">
                 {exampleWordle(
                   "weary",
-                  "bg-cell_true_bg dark:bg-cell_true_bg",
+                  "bg-cell_true dark:bg-cell_true",
                   0
                 )}
               </div>
@@ -68,7 +68,7 @@ export default function HowToModal({ close }: Props) {
               <div className="letter-container w-1/2">
                 {exampleWordle(
                   "pills",
-                  "bg-cell_false_position_bg dark:bg-cell_dark_false_position_bg",
+                  "bg-cell_false_position dark:bg-cell_dark_false_position",
                   1
                 )}
               </div>
@@ -82,7 +82,7 @@ export default function HowToModal({ close }: Props) {
               <div className="letter-container w-1/2">
                 {exampleWordle(
                   "vague",
-                  "bg-cell_false_bg dark:bg-cell_dark_false_bg",
+                  "bg-cell_false dark:bg-cell_dark_false",
                   3
                 )}
               </div>

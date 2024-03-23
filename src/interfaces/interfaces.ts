@@ -11,3 +11,8 @@ export interface Statistics {
 export interface MyObject {
   [key: string]: any;
 }
+interface Cell {
+  letter: string;
+  result: string;
+  classes: string;
+}

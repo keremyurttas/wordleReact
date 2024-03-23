@@ -1,30 +1,30 @@
-import React, { ReactNode, useEffect, useState } from "react";
+import React, { ReactNode, useEffect, useRef, useState } from "react";
 
 import "./App.css";
 import ResultModal from "./components/ResultModal";
 import HowToModal from "./components/HowToModal";
 import MessageToast from "./components/MessageToast";
-import { Statistics } from "./interfaces/interfaces";
-interface Cell {
-  letter: string;
-  result: string;
-  classes: string;
-}
+import Keyboard from "./components/Keyboard";
+import { Statistics, Prediction } from "./interfaces/interfaces";
+
 function App() {
   const wordLength = 5;
   const attemptsLimit = 6;
   const dailyWord = "hello";
+  const activeRowRef: any = useRef();
+  const [activeRowIndex, setActiveRowIndex] = useState(0);
+  activeRowRef.current = activeRowIndex;
 
-  let activeRowIndex = 0;
-  const assignEntries = (newRow: Cell[]) => {
+  // let activeRowIndex = 0;
+  const assignEntries = (newRow: Prediction[]) => {
     setEntries((prevEntries) => {
       const updatedEntries = [...prevEntries]; // Create a copy of the entries array
-      updatedEntries[activeRowIndex] = newRow; // Update the active row in the copied array
+      updatedEntries[activeRowRef.current] = newRow; // Update the active row in the copied array
       return updatedEntries; // Return the updated entries array
     });
   };
-  const gameTable = Array.from({ length: attemptsLimit }, (): Cell[] =>
-    Array.from({ length: wordLength }, (): Cell => {
+  const gameTable = Array.from({ length: attemptsLimit }, (): Prediction[] =>
+    Array.from({ length: wordLength }, (): Prediction => {
       return {
         letter: "",
         result: "",
@@ -41,11 +41,12 @@ function App() {
     gameFinished: false,
   });
 
-  let activeIndex = 0;
+  // let activeIndex = 0;
   async function checkActiveRow() {
-    const correctValues = dailyWord.split("");
-    const checkedRow = entries[activeRowIndex].map((entry, index) => {
-      const currentIndexMatches = entry.letter === correctValues[index];
+    const correctValues = dailyWord.toUpperCase().split("");
+    const checkedRow = entries[activeRowRef.current].map((entry, index) => {
+      const currentIndexMatches =
+        entry.letter.toUpperCase() === correctValues[index];
       if (currentIndexMatches) {
         correctValues.splice(index, 1, "");
       }
@@ -71,7 +72,7 @@ function App() {
         const newStatistics = {
           ...prevStatistics,
           win: isUserWon,
-          correctAttempt: activeRowIndex,
+          correctAttempt: activeRowRef.current,
           gameFinished: true,
         };
         return newStatistics;
@@ -83,7 +84,7 @@ function App() {
             message={dailyWord}
             statistics={{
               win: isUserWon,
-              correctAttempt: activeRowIndex - 1,
+              correctAttempt: activeRowRef.current - 1,
               gameFinished: true,
             }}
           />
@@ -91,7 +92,7 @@ function App() {
       }, 2500);
     }
 
-    if (isUserWon || activeRowIndex + 1 === attemptsLimit) {
+    if (isUserWon || activeRowRef.current + 1 === attemptsLimit) {
       handleShowStatistics(isUserWon);
       setIsGamePlayable(false);
     }
@@ -103,7 +104,7 @@ function App() {
     // Apply shake classes
     setEntries((prevEntries) => {
       const updatedEntries = prevEntries.map((row, rowIndex) => {
-        if (rowIndex === activeRowIndex) {
+        if (rowIndex === activeRowRef.current) {
           return row.map((cell) => ({ ...cell, classes: "shake" }));
         }
         return row;
@@ -115,7 +116,7 @@ function App() {
     setTimeout(() => {
       setEntries((prevEntries) => {
         const updatedEntries = prevEntries.map((row, rowIndex) => {
-          if (rowIndex === activeRowIndex) {
+          if (rowIndex === activeRowRef.current) {
             return row.map((cell) => ({ ...cell, classes: "" }));
           }
           return row;
@@ -125,50 +126,55 @@ function App() {
     }, shakeTimeout);
   }
 
+  const stateRef: any = useRef();
+
+  const [activeIndex, setActiveIndex] = useState(0);
+  stateRef.current = activeIndex;
+
+  async function keyPressed(e: KeyboardEvent | string) {
+    const currentIndex = stateRef.current;
+    const newRow = entries[activeRowRef.current];
+
+    const key = typeof e === "string" ? e : e.key;
+    const isLetter = /^[a-zA-Z]$/i.test(key);
+    console.log(e);
+    switch (key) {
+      case "Enter":
+        if (
+          entries[activeRowRef.current].every((entry) => entry.letter !== "")
+        ) {
+          await checkActiveRow();
+          setActiveRowIndex((prev) => prev + 1);
+          setActiveIndex(0);
+        } else {
+          handleShake();
+          setActiveComponent(
+            <MessageToast message="Not enough letters" close={handleClose} />
+          );
+        }
+        break;
+      case "Backspace":
+      case "Del":
+        if (currentIndex > 0) {
+          setActiveIndex((prev) => prev - 1);
+          newRow[currentIndex - 1] = {
+            letter: "",
+            result: "",
+            classes: "",
+          };
+        }
+        break;
+      default:
+        if (isLetter && currentIndex < wordLength) {
+          // Only update entries if activeIndex is within bounds
+          newRow[currentIndex].letter = key;
+          setActiveIndex((prev) => prev + 1);
+          assignEntries(newRow);
+        }
+    }
+  }
+
   useEffect(() => {
-    const keyPressed = async (e: KeyboardEvent) => {
-      const newRow = entries[activeRowIndex];
-      const key = e.key;
-      const isLetter = /^[a-zA-Z]$/i.test(key);
-      switch (key) {
-        case "Enter":
-          if (entries[activeRowIndex].every((entry) => entry.letter !== "")) {
-            await checkActiveRow();
-            activeRowIndex++;
-            activeIndex = 0;
-          } else {
-            handleShake();
-            setActiveComponent(
-              <MessageToast message="Not enough letters" close={handleClose} />
-            );
-          }
-          break;
-        case "Backspace":
-          {
-            if (activeIndex > 0) {
-              activeIndex--;
-              newRow[activeIndex] = {
-                letter: "",
-                result: "",
-                classes: "",
-              };
-
-              assignEntries(newRow);
-            }
-          }
-          break;
-        default:
-          if (isLetter && activeIndex < wordLength) {
-            // Only update entries if activeIndex is within bounds
-            newRow[activeIndex].letter = e.key;
-
-            assignEntries(newRow);
-
-            activeIndex++;
-          }
-      }
-    };
-
     if (isGamePlayable) {
       window.addEventListener("keydown", keyPressed);
     } else {
@@ -312,6 +318,7 @@ function App() {
       <div className="mx-auto w-2/3 md:w-1/2 lg:w-1/5">
         <div className="letter-container">{getGameTable()}</div>
       </div>
+      <Keyboard entries={entries} pressedKey={(key) => keyPressed(key)} />
     </section>
   );
 }

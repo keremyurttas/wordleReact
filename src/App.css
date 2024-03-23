@@ -89,7 +89,7 @@ input:checked + .slider:before {
   border-radius: 50%;
 }
 .keyboard-btn {
-  @apply rounded-md  bg-key_light dark:bg-key_dark dark:text-white text-lg lg:p-5 md:p-3 p-2  font-semibold text-key_light uppercase;
+  @apply rounded-md  bg-key_light dark:bg-key_dark dark:text-white text-lg lg:p-5 md:p-3 p-2  font-semibold text-key_light cursor-pointer;
 }
 .letter-container {
   @apply grid grid-cols-5 gap-1.5 w-full;
@@ -107,7 +107,6 @@ input:checked + .slider:before {
 .cell-false-position {
   @apply bg-cell_false_position dark:bg-cell_dark_false_position cell-animation;
 }
-
 
 .rotate-x {
   transition-delay: 1000ms;

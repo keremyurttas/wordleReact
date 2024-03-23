@@ -6,17 +6,35 @@ import HowToModal from "./components/HowToModal";
 import MessageToast from "./components/MessageToast";
 import Keyboard from "./components/Keyboard";
 import { Statistics, Prediction } from "./interfaces/interfaces";
+import { getNewWord } from "./middleware/index";
 
 function App() {
+  // isAWord("heelo").then((res) => {
+  //   console.log(res);
+  // });
   const wordLength = 5;
   const attemptsLimit = 6;
-  const dailyWord = "hello";
+  // let dailyWordRef.current: string;
+  const [dailyWord, setDailyWord] = useState("");
+  const dailyWordRef: any = useRef();
+  dailyWordRef.current = dailyWord;
+  useEffect(() => {
+    getNewWord()
+      .then((word) => {
+        // dailyWord = word.toUpperCase();
+        setDailyWord(word.toUpperCase());
+      })
+      .catch((error) => {
+        console.log("Error occured when fetcing word");
+      });
+  }, []);
   const activeRowRef: any = useRef();
   const [activeRowIndex, setActiveRowIndex] = useState(0);
   activeRowRef.current = activeRowIndex;
 
   // let activeRowIndex = 0;
   const assignEntries = (newRow: Prediction[]) => {
+    // console.log(activeRowRef.current);
     setEntries((prevEntries) => {
       const updatedEntries = [...prevEntries]; // Create a copy of the entries array
       updatedEntries[activeRowRef.current] = newRow; // Update the active row in the copied array
@@ -40,13 +58,22 @@ function App() {
     correctAttempt: null,
     gameFinished: false,
   });
-
+  // function handleIsAWord() {
+  //   const lettersArray = entries[activeRowRef.current].map(
+  //     (entry) => entry.letter
+  //   );
+  //   const concatenatedString = lettersArray.join("");
+  //   return isAWord(concatenatedString);
+  // }
   // let activeIndex = 0;
   async function checkActiveRow() {
-    const correctValues = dailyWord.toUpperCase().split("");
+    // console.log(activeRowRef.current);
+    // console.log(stateRef.current);
+    const correctValues = dailyWordRef.current.split("");
+
     const checkedRow = entries[activeRowRef.current].map((entry, index) => {
-      const currentIndexMatches =
-        entry.letter.toUpperCase() === correctValues[index];
+      const predictedLetter = entry.letter.toUpperCase();
+      const currentIndexMatches = predictedLetter === correctValues[index];
       if (currentIndexMatches) {
         correctValues.splice(index, 1, "");
       }
@@ -55,13 +82,17 @@ function App() {
         ...entry,
         result: currentIndexMatches
           ? "true"
-          : correctValues.includes(entry.letter)
+          : correctValues.includes(predictedLetter)
           ? "false-position"
           : "false",
       };
     });
     assignEntries(checkedRow);
     handleResultModal(checkedRow.every((cell) => cell.result === "true"));
+
+    // setActiveComponent(
+    //   <MessageToast message="Not in the words list" close={handleClose} />
+    // );
   }
 
   function handleResultModal(isUserWon: boolean) {
@@ -81,7 +112,7 @@ function App() {
         setActiveComponent(
           <ResultModal
             close={handleClose}
-            message={dailyWord}
+            message={dailyWordRef.current}
             statistics={{
               win: isUserWon,
               correctAttempt: activeRowRef.current - 1,
@@ -137,15 +168,24 @@ function App() {
 
     const key = typeof e === "string" ? e : e.key;
     const isLetter = /^[a-zA-Z]$/i.test(key);
-    console.log(e);
     switch (key) {
       case "Enter":
         if (
           entries[activeRowRef.current].every((entry) => entry.letter !== "")
         ) {
-          await checkActiveRow();
-          setActiveRowIndex((prev) => prev + 1);
-          setActiveIndex(0);
+          if (true) {
+            await checkActiveRow();
+            setActiveRowIndex((prev) => prev + 1);
+            setActiveIndex(0);
+          } else {
+            handleShake();
+            setActiveComponent(
+              <MessageToast
+                message="Not in the words list"
+                close={handleClose}
+              />
+            );
+          }
         } else {
           handleShake();
           setActiveComponent(
@@ -162,6 +202,7 @@ function App() {
             result: "",
             classes: "",
           };
+          assignEntries(newRow);
         }
         break;
       default:
@@ -260,7 +301,7 @@ function App() {
               setActiveComponent(
                 <ResultModal
                   close={handleClose}
-                  message={dailyWord}
+                  message={dailyWordRef.current}
                   statistics={statistics}
                 />
               );

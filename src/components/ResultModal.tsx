@@ -8,7 +8,6 @@ interface Props {
 }
 
 export default function ResultModal({ close, statistics, message }: Props) {
-  console.log(statistics);
   const renderGameResult = () => {
     if (!statistics.gameFinished) return null;
 
@@ -20,7 +19,7 @@ export default function ResultModal({ close, statistics, message }: Props) {
     );
   };
   function getResultBarDesign(index: number) {
-    return statistics.correctAttempt === index
+    return statistics.win && statistics.correctAttempt === index
       ? "w-full bg-cell_true dark:bg-cell_dark_true"
       : "bg-message";
   }
@@ -70,8 +69,7 @@ export default function ResultModal({ close, statistics, message }: Props) {
                 index
               )} w-5 h-5 flex items-center justify-center text-white`}
             >
-              {" "}
-              {index === statistics.correctAttempt ? 1 : 0}
+              {statistics.win && index === statistics.correctAttempt ? 1 : 0}
             </div>
           </div>
         ))}

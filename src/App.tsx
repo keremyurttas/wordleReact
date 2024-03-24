@@ -6,22 +6,20 @@ import HowToModal from "./components/HowToModal";
 import MessageToast from "./components/MessageToast";
 import Keyboard from "./components/Keyboard";
 import { Statistics, Prediction } from "./interfaces/interfaces";
-import { getNewWord } from "./middleware/index";
+import { getNewWord, isAWord } from "./middleware/index";
 
 function App() {
-  // isAWord("heelo").then((res) => {
-  //   console.log(res);
-  // });
+
   const wordLength = 5;
   const attemptsLimit = 6;
-  // let dailyWordRef.current: string;
+
   const [dailyWord, setDailyWord] = useState("");
   const dailyWordRef: any = useRef();
   dailyWordRef.current = dailyWord;
   useEffect(() => {
     getNewWord()
       .then((word) => {
-        // dailyWord = word.toUpperCase();
+       
         setDailyWord(word.toUpperCase());
       })
       .catch((error) => {
@@ -32,12 +30,14 @@ function App() {
   const [activeRowIndex, setActiveRowIndex] = useState(0);
   activeRowRef.current = activeRowIndex;
 
-  // let activeRowIndex = 0;
-  const assignEntries = (newRow: Prediction[]) => {
-    // console.log(activeRowRef.current);
+
+  const assignEntries = async (newRow: Prediction[]) => {
+
+    const indexToUpdate = await activeRowRef.current;
     setEntries((prevEntries) => {
       const updatedEntries = [...prevEntries]; // Create a copy of the entries array
-      updatedEntries[activeRowRef.current] = newRow; // Update the active row in the copied array
+
+      updatedEntries[indexToUpdate] = newRow; // Update the active row in the copied array
       return updatedEntries; // Return the updated entries array
     });
   };
@@ -58,17 +58,14 @@ function App() {
     correctAttempt: null,
     gameFinished: false,
   });
-  // function handleIsAWord() {
-  //   const lettersArray = entries[activeRowRef.current].map(
-  //     (entry) => entry.letter
-  //   );
-  //   const concatenatedString = lettersArray.join("");
-  //   return isAWord(concatenatedString);
-  // }
-  // let activeIndex = 0;
-  async function checkActiveRow() {
-    // console.log(activeRowRef.current);
-    // console.log(stateRef.current);
+  async function handleIsAWord() {
+    const lettersArray = entries[activeRowRef.current].map(
+      (entry) => entry.letter
+    );
+    const concatenatedString = lettersArray.join("");
+    return await isAWord(concatenatedString);
+  }
+  function checkActiveRow() {
     const correctValues = dailyWordRef.current.split("");
 
     const checkedRow = entries[activeRowRef.current].map((entry, index) => {
@@ -90,9 +87,7 @@ function App() {
     assignEntries(checkedRow);
     handleResultModal(checkedRow.every((cell) => cell.result === "true"));
 
-    // setActiveComponent(
-    //   <MessageToast message="Not in the words list" close={handleClose} />
-    // );
+
   }
 
   function handleResultModal(isUserWon: boolean) {
@@ -173,7 +168,7 @@ function App() {
         if (
           entries[activeRowRef.current].every((entry) => entry.letter !== "")
         ) {
-          if (true) {
+          if (await handleIsAWord()) {
             await checkActiveRow();
             setActiveRowIndex((prev) => prev + 1);
             setActiveIndex(0);

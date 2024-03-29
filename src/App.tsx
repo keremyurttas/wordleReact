@@ -9,38 +9,9 @@ import { Statistics, Prediction } from "./interfaces/interfaces";
 import { getNewWord, isAWord } from "./middleware/index";
 
 function App() {
-
   const wordLength = 5;
   const attemptsLimit = 6;
-
-  const [dailyWord, setDailyWord] = useState("");
-  const dailyWordRef: any = useRef();
-  dailyWordRef.current = dailyWord;
-  useEffect(() => {
-    getNewWord()
-      .then((word) => {
-       
-        setDailyWord(word.toUpperCase());
-      })
-      .catch((error) => {
-        console.log("Error occured when fetcing word");
-      });
-  }, []);
-  const activeRowRef: any = useRef();
-  const [activeRowIndex, setActiveRowIndex] = useState(0);
-  activeRowRef.current = activeRowIndex;
-
-
-  const assignEntries = async (newRow: Prediction[]) => {
-
-    const indexToUpdate = await activeRowRef.current;
-    setEntries((prevEntries) => {
-      const updatedEntries = [...prevEntries]; // Create a copy of the entries array
-
-      updatedEntries[indexToUpdate] = newRow; // Update the active row in the copied array
-      return updatedEntries; // Return the updated entries array
-    });
-  };
+  const theme = localStorage.getItem("theme") || "light";
   const gameTable = Array.from({ length: attemptsLimit }, (): Prediction[] =>
     Array.from({ length: wordLength }, (): Prediction => {
       return {
@@ -50,20 +21,71 @@ function App() {
       };
     })
   );
+  const [dailyWord, setDailyWord] = useState("");
+  const dailyWordRef: any = useRef();
+  dailyWordRef.current = dailyWord;
+  const activeRowRef: any = useRef();
+  const [activeRowIndex, setActiveRowIndex] = useState(0);
+  activeRowRef.current = activeRowIndex;
   const [entries, setEntries] = useState(gameTable);
   const [isGamePlayable, setIsGamePlayable] = useState(true);
+  const stateRef: any = useRef();
+  const [activeIndex, setActiveIndex] = useState(0);
+  stateRef.current = activeIndex;
 
   const [statistics, setStatistics] = useState<Statistics>({
     win: false,
     correctAttempt: null,
     gameFinished: false,
   });
-  async function handleIsAWord() {
-    const lettersArray = entries[activeRowRef.current].map(
-      (entry) => entry.letter
-    );
-    const concatenatedString = lettersArray.join("");
-    return await isAWord(concatenatedString);
+  useEffect(() => {
+    // apply the stored
+    document.documentElement.classList.add(theme);
+    getNewWord()
+      .then((word) => {
+        setDailyWord(word.toUpperCase());
+      })
+      .catch((error) => {
+        console.log("Error occured when fetcing word");
+      });
+  }, []);
+  useEffect(() => {
+    if (isGamePlayable) {
+      window.addEventListener("keydown", keyPressed);
+    } else {
+      // Remove the event listener if the game is not playable
+      window.removeEventListener("keydown", keyPressed);
+    }
+
+    return () => {
+      window.removeEventListener("keydown", keyPressed);
+    };
+  }, [isGamePlayable]);
+
+  const assignEntries = async (newRow: Prediction[]) => {
+    const indexToUpdate = await activeRowRef.current;
+    setEntries((prevEntries) => {
+      const updatedEntries = [...prevEntries]; // Create a copy of the entries array
+
+      updatedEntries[indexToUpdate] = newRow; // Update the active row in the copied array
+      return updatedEntries; // Return the updated entries array
+    });
+  };
+
+  async function checkIfIsAValidWord() {
+    setIsGamePlayable(false);
+    let isValid;
+    try {
+      const lettersArray = entries[activeRowRef.current].map(
+        (entry) => entry.letter
+      );
+      const concatenatedString = lettersArray.join("");
+      isValid = await isAWord(concatenatedString);
+    } finally {
+      setIsGamePlayable(true); // Set isGamePlayable to true after fetch
+    }
+
+    return isValid;
   }
   function checkActiveRow() {
     const correctValues = dailyWordRef.current.split("");
@@ -85,13 +107,11 @@ function App() {
       };
     });
     assignEntries(checkedRow);
-    handleResultModal(checkedRow.every((cell) => cell.result === "true"));
-
-
+    displayResultModal(checkedRow.every((cell) => cell.result === "true"));
   }
 
-  function handleResultModal(isUserWon: boolean) {
-    function handleShowStatistics(isUserWon: boolean) {
+  function displayResultModal(isUserWon: boolean) {
+    function showStatistics(isUserWon: boolean) {
       setStatistics((prevStatistics) => {
         // Use the previous state to compute the new state
 
@@ -119,12 +139,12 @@ function App() {
     }
 
     if (isUserWon || activeRowRef.current + 1 === attemptsLimit) {
-      handleShowStatistics(isUserWon);
+      showStatistics(isUserWon);
       setIsGamePlayable(false);
     }
   }
 
-  function handleShake() {
+  function applyShake() {
     const shakeTimeout = 1000;
 
     // Apply shake classes
@@ -152,11 +172,6 @@ function App() {
     }, shakeTimeout);
   }
 
-  const stateRef: any = useRef();
-
-  const [activeIndex, setActiveIndex] = useState(0);
-  stateRef.current = activeIndex;
-
   async function keyPressed(e: KeyboardEvent | string) {
     const currentIndex = stateRef.current;
     const newRow = entries[activeRowRef.current];
@@ -168,12 +183,12 @@ function App() {
         if (
           entries[activeRowRef.current].every((entry) => entry.letter !== "")
         ) {
-          if (await handleIsAWord()) {
+          if (await checkIfIsAValidWord()) {
             await checkActiveRow();
             setActiveRowIndex((prev) => prev + 1);
             setActiveIndex(0);
           } else {
-            handleShake();
+            applyShake();
             setActiveComponent(
               <MessageToast
                 message="Not in the words list"
@@ -182,7 +197,7 @@ function App() {
             );
           }
         } else {
-          handleShake();
+          applyShake();
           setActiveComponent(
             <MessageToast message="Not enough letters" close={handleClose} />
           );
@@ -209,19 +224,6 @@ function App() {
         }
     }
   }
-
-  useEffect(() => {
-    if (isGamePlayable) {
-      window.addEventListener("keydown", keyPressed);
-    } else {
-      // Remove the event listener if the game is not playable
-      window.removeEventListener("keydown", keyPressed);
-    }
-
-    return () => {
-      window.removeEventListener("keydown", keyPressed);
-    };
-  }, [isGamePlayable]);
 
   function getGameTable() {
     return (
@@ -271,7 +273,7 @@ function App() {
   }
 
   return (
-    <section className="md:py-10 py-5 flex flex-col justify-between h-screen dark:bg-main_dark">
+    <section className="md:py-10 py-5 flex flex-col   lg:gap-20 md:gap-12 gap-6">
       {activeComponent}
       <div className="mx-auto px-6 py-8 flex gap-8 md:gap-40 dark:bg-header_dark bg-header w-max rounded-2xl">
         <div className="flex gap-4">
@@ -333,7 +335,11 @@ function App() {
             />
 
             <label className="switch">
-              <input onClick={() => themeSwitch()} type="checkbox" />
+              <input
+                defaultChecked={theme == "dark"}
+                onClick={() => themeSwitch()}
+                type="checkbox"
+              />
               <span className="slider round"></span>
             </label>
             <img
@@ -351,7 +357,7 @@ function App() {
           </div>
         </div>
       </div>
-      <div className="mx-auto w-2/3 md:w-1/2 lg:w-1/5">
+      <div className="mx-auto w-2/3 md:w-1/2 lg:w-1/5 ">
         <div className="letter-container">{getGameTable()}</div>
       </div>
       <Keyboard entries={entries} pressedKey={(key) => keyPressed(key)} />

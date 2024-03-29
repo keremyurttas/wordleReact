@@ -13,9 +13,6 @@ export default function Keyboard({ entries, pressedKey }: Props) {
     }, 2500);
   }, [entries]);
 
-  //   console.log(entries);
-  //   entries.map((entry) => console.log([entry]));
-
   const allPredictions: Prediction[] = delayedEntries.flatMap((row) => row);
   function handleKeyBG(key: string) {
     {
@@ -44,9 +41,12 @@ export default function Keyboard({ entries, pressedKey }: Props) {
   ];
 
   return (
-    <div className="mx-auto w-max flex flex-col  gap-3 items-center">
+    <div className="mx-auto w-max flex flex-col  lg:gap-3 md:gap-2 gap-1 items-center">
       {keyboardLayout.map((row, rowIndex) => (
-        <div key={rowIndex} className="flex  gap-3 items-center">
+        <div
+          key={rowIndex}
+          className="flex  lg:gap-3 md:gap-2 gap-1 items-center"
+        >
           {row.map((key, index) => (
             <div
               onClick={() => pressedKey(key)}

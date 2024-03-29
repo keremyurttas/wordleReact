@@ -16,6 +16,7 @@ export default function HowToModal({ close }: Props) {
       <>
         {word.split("").map((cell, index) => (
           <div
+            key={index}
             className={`${index === desiredIndex && classes} ${
               animation && "rotate-x"
             } cell text-lg md:text-2xl`}
@@ -52,11 +53,7 @@ export default function HowToModal({ close }: Props) {
           <div>
             <div className="space-y-2">
               <div className="letter-container w-1/2">
-                {exampleWordle(
-                  "weary",
-                  "bg-cell_true dark:bg-cell_true",
-                  0
-                )}
+                {exampleWordle("weary", "bg-cell_true dark:bg-cell_true", 0)}
               </div>
               <p>
                 <strong>W</strong> is in the word and in the correct spot.
